@@ -39,4 +39,40 @@ model Institution {
   longitude       Float?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  pets            Pet[]    // Relação com os pets
+  petStatuses     PetStatus[] // Relação com os status dos pets
+}
+
+// Modelo de Status do Pet
+model PetStatus {
+  id          String   @id @default(uuid())
+  status      String   // "DISPONIVEL", "EM_PROCESSO", "ADOTADO", "INDISPONIVEL"
+  description String?  // Descrição opcional do status
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  petId       String
+  pet         Pet      @relation(fields: [petId], references: [id])
+  institutionId String
+  institution   Institution @relation(fields: [institutionId], references: [id])
+}
+
+// Modelo de Pet
+model Pet {
+  id            String   @id @default(uuid())
+  name          String
+  species       String   // "CACHORRO" ou "GATO"
+  breed         String?
+  age           Int
+  size          String   // "PEQUENO", "MEDIO", "GRANDE"
+  gender        String   // "MACHO" ou "FEMEA"
+  description   String
+  isVaccinated  Boolean  @default(false)
+  isNeutered    Boolean  @default(false)
+  isAvailable   Boolean  @default(true)
+  photos        String[] // Array de URLs das fotos
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  institutionId String
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  statusHistory PetStatus[] // Histórico de status
 }
