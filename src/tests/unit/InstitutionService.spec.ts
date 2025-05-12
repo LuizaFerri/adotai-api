@@ -1,5 +1,5 @@
 import { InstitutionService } from '../../services/InstitutionService';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { AppError } from '../../utils/AppError';
 import { PrismaClient } from '@prisma/client';
 

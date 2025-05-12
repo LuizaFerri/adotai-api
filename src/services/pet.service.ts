@@ -33,22 +33,40 @@ export class PetService {
   }
 
   async create(petData: CreatePetData, institutionId: string) {
-    const pet = await this.prisma.pet.create({
-      data: {
-        ...petData,
-        institutionId,
-        isAvailable: true
-      }
-    });
 
-    await this.petStatusService.createStatus({
-      status: 'DISPONIVEL',
-      description: 'Pet cadastrado e disponível para adoção',
-      petId: pet.id,
-      institutionId
-    });
+    
+    try {
 
-    return pet;
+      const pet = await this.prisma.pet.create({
+        data: {
+          name: petData.name,
+          species: petData.species,
+          breed: petData.breed,
+          age: petData.age,
+          size: petData.size,
+          gender: petData.gender,
+          description: petData.description,
+          isVaccinated: petData.isVaccinated,
+          isNeutered: petData.isNeutered,
+          photos: petData.photos,
+          institutionId: institutionId,
+          isAvailable: true
+        }
+      });
+  
+  
+      await this.petStatusService.createStatus({
+        status: 'DISPONIVEL',
+        description: 'Pet cadastrado e disponível para adoção',
+        petId: pet.id,
+        institutionId
+      });
+  
+      return pet;
+    } catch (error) {
+      console.error('PetService - Erro ao criar pet:', error);
+      throw error;
+    }
   }
 
   async findAll({ page, limit, species, size, gender, isAvailable }: FindAllParams) {

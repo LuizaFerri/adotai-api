@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PetService } from '../services/pet.service';
 import { PetStatusService } from '../services/pet-status.service';
+import { UploadService } from '../services/upload.service';
 import { PrismaClient } from '@prisma/client';
 
 interface RequestWithUser extends Request {
@@ -8,16 +9,19 @@ interface RequestWithUser extends Request {
     id: string;
     type: 'user' | 'institution';
   };
+  files?: Express.Multer.File[];
 }
 
 export class PetController {
   private petService: PetService;
   private petStatusService: PetStatusService;
+  private uploadService: UploadService;
   private prisma: PrismaClient;
 
   constructor() {
     this.petService = new PetService();
     this.petStatusService = new PetStatusService();
+    this.uploadService = new UploadService();
     this.prisma = new PrismaClient();
   }
 
@@ -35,11 +39,37 @@ export class PetController {
         return res.status(400).json({ error: 'Instituição não encontrada' });
       }
       
+      const files = (req as RequestWithUser).files;
+      let photoUrls: string[] = [];
+
+      if (files && files.length > 0) {
+        const uploadPromises = files.map(file => 
+          this.uploadService.uploadFromFile(file.path)
+        );
+        photoUrls = await Promise.all(uploadPromises);
+      } else if (req.body.photos && Array.isArray(req.body.photos)) {
+        photoUrls = req.body.photos;
+      }
+
+      if (req.body.base64Photos && Array.isArray(req.body.base64Photos)) {
+        const base64UploadPromises = req.body.base64Photos.map((base64: string) =>
+          this.uploadService.uploadFromBase64(base64)
+        );
+        const base64PhotoUrls = await Promise.all(base64UploadPromises);
+        photoUrls = [...photoUrls, ...base64PhotoUrls];
+      }
+      
+      const { base64Photos, ...petDataWithoutBase64 } = req.body;
+      
+      console.log('PetController - Dados originais:', JSON.stringify(req.body));
+      console.log('PetController - Dados sem base64Photos:', JSON.stringify(petDataWithoutBase64));
       
       const petData = {
-        ...req.body,
+        ...petDataWithoutBase64,
+        photos: photoUrls
       };
-
+      
+      console.log('PetController - Dados finais enviados para o serviço:', JSON.stringify(petData));
       
       const pet = await this.petService.create(petData, institutionId);
       return res.status(201).json(pet);
@@ -106,8 +136,33 @@ export class PetController {
     try {
       const { id } = req.params;
       const institutionId = (req as RequestWithUser).user.id;
-      const petData = req.body;
+      
+      const files = (req as RequestWithUser).files;
+      let photoUrls: string[] = [];
 
+      if (files && files.length > 0) {
+        const uploadPromises = files.map(file => 
+          this.uploadService.uploadFromFile(file.path)
+        );
+        photoUrls = await Promise.all(uploadPromises);
+        req.body.photos = photoUrls;
+      }
+
+      if (req.body.base64Photos && Array.isArray(req.body.base64Photos)) {
+        const base64UploadPromises = req.body.base64Photos.map((base64: string) =>
+          this.uploadService.uploadFromBase64(base64)
+        );
+        const base64PhotoUrls = await Promise.all(base64UploadPromises);
+        
+        if (!req.body.photos) {
+          req.body.photos = [];
+        }
+        
+        req.body.photos = [...req.body.photos, ...base64PhotoUrls];
+        delete req.body.base64Photos;
+      }
+
+      const petData = req.body;
       const pet = await this.petService.update(id, petData, institutionId);
       return res.json(pet);
     } catch (error) {

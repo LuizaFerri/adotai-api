@@ -1,10 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:postgres@localhost:5432/adotai_db?schema=public"
+  url      = "postgresql://postgres:postgres@postgres:5432/adotai_db?schema=public"
 }
 
 // Modelo de usuário (pessoa física)

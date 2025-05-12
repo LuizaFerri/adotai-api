@@ -1,4 +1,4 @@
-import { compare } from 'bcrypt';
+import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
 import prisma from '../utils/prisma';
 import { AppError } from '../utils/AppError';

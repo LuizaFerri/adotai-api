@@ -1,5 +1,5 @@
 import { AuthService } from '../../services/AuthService';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { AppError } from '../../utils/AppError';
 import authConfig from '../../config/auth';
